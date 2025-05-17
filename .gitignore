@@ -1,0 +1,16 @@
+# Arquivos de Ambiente e Segredos
+.env
+*.env
+env/
+venv/
+
+# Arquivos compilados do Python e Caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Arquivos de IDE e Sistema Operacional
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
