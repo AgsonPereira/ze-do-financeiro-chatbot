@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Zé do Financeiro - Seu Guia de Bolso!</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+    </head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <img src="{{ url_for('static', filename='img/logo_ze_financeiro.png') }}" alt="Logo Zé do Financeiro" id="chatLogo"> 
+            <h2>Zé do Financeiro</h2>
+            <p>Seu guia de bolso para o microempreendedor digitalizado!</p>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <strong>Zé do Financeiro:</strong> Olá! Sou o Zé do Financeiro. Em que posso te ajudar hoje?
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="Digite sua mensagem aqui...">
+            <button id="sendButton">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+
+        // Função para adicionar mensagem ao chat
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            if (sender === 'user') {
+                messageDiv.classList.add('user-message');
+                messageDiv.innerHTML = `<strong>Você:</strong> ${text}`;
+            } else {
+                messageDiv.classList.add('bot-message');
+                messageDiv.innerHTML = `<strong>Zé do Financeiro:</strong> ${text}`;
+            }
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Rolagem automática para a última mensagem
+        }
+
+        // Função para enviar mensagem para o backend
+        async function sendMessageToBot(messageText) {
+            addMessage(messageText, 'user'); // Mostra a mensagem do usuário na tela
+            userInput.value = ''; // Limpa o campo de input
+            userInput.disabled = true;
+            sendButton.disabled = true;
+
+            try {
+                // Usaremos GET por simplicidade inicial, como nos testes anteriores.
+                // O ideal seria POST com JSON, mas vamos um passo de cada vez.
+                const response = await fetch(`/webhook?mensagem=${encodeURIComponent(messageText)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data && data.resposta_bot) {
+                    addMessage(data.resposta_bot, 'bot');
+                } else {
+                    addMessage("O Zé não conseguiu processar essa, tente de novo ou de outra forma.", 'bot');
+                }
+
+            } catch (error) {
+                console.error('Erro ao enviar mensagem:', error);
+                addMessage(`Oxe, deu um piripaque na minha conexão! Tenta de novo daqui a pouquinho. (Erro: ${error.message})`, 'bot');
+            } finally {
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        // Event listener para o botão de enviar
+        sendButton.addEventListener('click', () => {
+            const messageText = userInput.value.trim();
+            if (messageText) {
+                sendMessageToBot(messageText);
+            }
+        });
+
+        // Event listener para a tecla Enter no campo de input
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                const messageText = userInput.value.trim();
+                if (messageText) {
+                    sendMessageToBot(messageText);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

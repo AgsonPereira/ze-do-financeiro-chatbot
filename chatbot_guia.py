@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 import traceback # Para imprimir o traceback completo do erro, se necessário
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 # --- Carregar variáveis de ambiente do arquivo .env ---
 load_dotenv()
@@ -240,6 +240,79 @@ E aí, deu pra clarear? Se tiver alguma pergunta mais específica sobre como faz
 """
     return resposta_base
 
+#Alerta Vermelho AntiGolpe
+
+def modulo_alerta_antigolpe(mensagem_usuario_original):
+    print(f"[{NOME_CHATBOT}] Entrou no módulo Alerta Vermelho AntiGolpe.")
+    mensagem_lower = mensagem_usuario_original.lower().strip()
+
+    # CONTEÚDO BASE DO MÓDULO
+    resposta_base = f"""
+Opa, meu patrão/minha patroa! Fique esperto que nem suricato no deserto, porque no mundo digital tem muito malandro querendo passar a perna na gente boa! Mas relaxa, que o {NOME_CHATBOT} vai te dar o bizu pra você não cair em cilada e manter seu suado dinheirinho seguro. Bora aprender a farejar golpe de longe? 🕵️‍♂️🚫
+
+**Principais Golpes que Rondam o Empreendedor:**
+* **Boleto Adulterado:** Sempre confira o nome do beneficiário, o CNPJ, o valor e o banco antes de pagar. Se o código de barras estiver esquisito ou falhado, desconfie!
+* **Mensagem Falsa (Phishing):** SMS, e-mail ou zap com link suspeito pedindo seus dados, senha, ou dizendo que você ganhou um prêmio incrível? CORRA QUE É CILADA, BINO! Banco e empresa séria não pedem senha assim.
+* **Zap Clonado ou Perfil Falso:** "Amigo" ou "parente" pedindo dinheiro com urgência? Ligue pra pessoa (chamada de voz, não zap!) pra confirmar antes de fazer qualquer Pix.
+* **Crédito Fácil que Pede Depósito Adiantado:** Promessa de empréstimo rápido sem consulta, mas tem que pagar uma "taxinha" antes? Golpe na certa! Instituição séria não cobra pra liberar empréstimo.
+* **Golpe do PIX Agendado ou Comprovante Falso:** Vendeu algo? Só entregue o produto depois que o dinheiro CAIR MESMO na sua conta. Comprovante pode ser forjado!
+
+**Dicas de Ouro do {NOME_CHATBOT} pra se Proteger:**
+1.  **Desconfie Sempre:** Se a oferta é boa demais pra ser verdade, provavelmente é mentira.
+2.  **Não Clique em Tudo:** Link estranho no e-mail, SMS ou zap? Melhor não clicar. Vá direto no site oficial da empresa ou do banco.
+3.  **Senha é Segredo:** Sua senha é que nem escova de dente, não se empresta pra ninguém! Use senhas fortes e diferentes para cada serviço.
+4.  **Autenticação de Dois Fatores (2FA):** Ative isso em tudo que der (banco, redes sociais, e-mail). É uma camada extra de segurança arretada!
+5.  **Na Dúvida, NÃO FAÇA!** Se sentir que tem algo esquisito, pare, respire e peça ajuda ou verifique com a empresa/banco por um canal que VOCÊ conhece e confia.
+
+Quer que o {NOME_CHATBOT} te conte um 'causo' de golpe pra você ver como os malandros agem, ou tem alguma dúvida específica sobre algum tipo de trambique? Manda aí que a gente tenta te deixar mais safo!
+"""
+
+    # Lógica para interações mais específicas com Gemini
+    # Exemplo: se o usuário pedir um "causo" ou perguntar sobre um golpe específico.
+    # Esta parte será um pouco mais elaborada.
+    
+    # Cenário simples: se o usuário pedir um exemplo de golpe.
+    gatilhos_cenario_golpe = ["me conte um causo", "exemplo de golpe", "simulação de golpe", "como agem os golpistas"]
+    if any(gatilho in mensagem_lower for gatilho in gatilhos_cenario_golpe):
+        print(f"[{NOME_CHATBOT}] 'Alerta AntiGolpe': Usuário pediu um cenário de golpe. Usando Gemini.")
+        if not GOOGLE_API_KEY or not MODELO_GEMINI:
+            return f"Oxe, meu sistema avançado que cria os 'causos' de golpe tá tirando uma soneca. Mas a dica principal é: sempre desconfie e verifique tudo direitinho antes de clicar ou pagar!"
+
+        prompt_gemini_cenario = f"""
+Você é o {NOME_CHATBOT}, um consultor financeiro gente boa de Alagoas.
+Um microempreendedor pediu um exemplo de um golpe comum para ficar mais esperto.
+Descreva um cenário curto e simples de um golpe digital comum que afeta pequenos comerciantes (ex: golpe do boleto falso, phishing por whatsapp, falso empréstimo).
+Use sua persona alagoana, linguagem popular, e explique rapidamente qual o 'pulo do gato' do golpista e qual o 'alerta vermelho' para o empreendedor.
+Mantenha o cenário curto, em 3 a 5 frases.
+"""
+        try:
+            print(f"[{NOME_CHATBOT}] 'Alerta AntiGolpe': Enviando pedido de cenário para o Gemini...")
+            generation_config = genai.types.GenerationConfig(temperature=0.8) # Um pouco mais de criatividade para cenários
+            response = MODELO_GEMINI.generate_content(prompt_gemini_cenario, generation_config=generation_config)
+            
+            text_result = None
+            # (Reutilizar a mesma lógica de extração de texto da resposta do Gemini das outras funções)
+            if hasattr(response, 'text') and response.text and isinstance(response.text, str): text_result = response.text
+            elif hasattr(response, 'parts') and response.parts: text_result = "".join(part.text for part in response.parts if hasattr(part, 'text') and isinstance(part.text, str))
+            elif hasattr(response, 'candidates') and response.candidates and hasattr(response.candidates[0], 'content') and hasattr(response.candidates[0].content, 'parts') and response.candidates[0].content.parts: text_result = "".join(part.text for part in response.candidates[0].content.parts if hasattr(part, 'text') and isinstance(part.text, str))
+            
+            if text_result and text_result.strip():
+                cenario_golpe = text_result.strip()
+                print(f"[{NOME_CHATBOT}] 'Alerta AntiGolpe': Cenário de golpe gerado pelo Gemini: {cenario_golpe}")
+                return f"{resposta_base}\n\n**O {NOME_CHATBOT} te conta um causo pra ficar ligado:**\n{cenario_golpe}\n\nLembre-se: informação e desconfiança são suas melhores armas!"
+            else: # Tratamento de bloqueio ou resposta vazia
+                block_reason_msg = ""
+                if hasattr(response, 'prompt_feedback') and response.prompt_feedback and hasattr(response.prompt_feedback, 'block_reason') and response.prompt_feedback.block_reason:
+                    block_reason_msg = f"Motivo do bloqueio: {response.prompt_feedback.block_reason}."
+                print(f"[{NOME_CHATBOT}] 'Alerta AntiGolpe': Resposta do Gemini para cenário veio vazia ou em formato não reconhecido. {block_reason_msg}")
+                return f"{resposta_base}\n\nOxe! Ia te contar um causo, mas meu repertório deu um branco aqui. Mas fica a dica: todo cuidado é pouco!"
+        except Exception as e:
+            print(f"[{NOME_CHATBOT}] 'Alerta AntiGolpe': Erro ao chamar Gemini para gerar cenário: {e}\n{traceback.format_exc()}")
+            return f"{resposta_base}\n\nRapaz, minha memória pra causo de golpe falhou agora. Mas a regra é clara: desconfie sempre!"
+    
+    # Se não for um pedido de cenário, retorna a informação base.
+    return resposta_base
+
 def listar_termos_conhecidos():
     if not glossario_local_do_ze:
         return f"Oxe, ainda tô aprendendo os termos, {NOME_CHATBOT} aqui tá começando! Volte mais tarde."
@@ -305,6 +378,7 @@ def pesquisar_termo_glossario(mensagem_usuario):
         return f"Oxe, {NOME_CHATBOT} não entendeu bem o que você quis dizer com '{mensagem_usuario}'. Tente perguntar 'o que é [termo]?', sobre 'Pix ou Maquininha', dicas de 'Caixa Forte', ou peça a 'lista de termos'."
 
 # --- Lógica Principal do Chatbot (Roteamento) ---
+
 def processar_mensagem_usuario(mensagem_usuario):
     mensagem_lower = mensagem_usuario.lower().strip()
     print(f"[{NOME_CHATBOT}] MENSAGEM RECEBIDA (roteador principal): '{mensagem_usuario}' (normalizada: '{mensagem_lower}')")
@@ -340,10 +414,24 @@ def processar_mensagem_usuario(mensagem_usuario):
         print(f"[{NOME_CHATBOT}] Roteador: Mensagem acionou o módulo Caixa Forte.")
         return modulo_caixa_forte(mensagem_usuario)
 
-    # 4. Se não for nenhum dos anteriores, tenta o Glossário (que pode usar Gemini)
+    # 4. Verificar Módulo "Alerta Vermelho AntiGolpe" (NOVO)
+    gatilhos_antigolpe = [
+        "alerta golpe", "anti golpe", "golpe pix", "golpe boleto", "evitar golpe", 
+        "segurança online", "phishing", "golpe do zap", "golpe whatsapp", "me proteger de golpe",
+        "dica de segurança", "é golpe", "como saber se é golpe", "me conte um causo", "exemplo de golpe" # Adicionando gatilhos para cenário
+    ]
+    if any(gatilho in mensagem_lower for gatilho in gatilhos_antigolpe):
+        print(f"[{NOME_CHATBOT}] Roteador: Mensagem acionou o módulo Alerta AntiGolpe.")
+        return modulo_alerta_antigolpe(mensagem_usuario)
+
+    # 5. Se não for nenhum dos anteriores, tenta o Glossário (que pode usar Gemini)
     print(f"[{NOME_CHATBOT}] Roteador: Mensagem não é saudação nem módulo específico, encaminhando para pesquisa de termo/glossário...")
     return pesquisar_termo_glossario(mensagem_usuario)
 
+@app.route('/') # Rota para a página principal do chat
+def home():
+    print(f"[{NOME_CHATBOT}] Servindo a página principal do chat (index.html).")
+    return render_template('index.html') # Renderiza e retorna o arquivo index.html da pasta 'templates'
 
 # --- Endpoint para receber mensagens (simulando o WhatsApp) ---
 @app.route('/webhook', methods=['POST', 'GET'])

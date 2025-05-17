@@ -1,0 +1,158 @@
+/* static/css/estilo.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Open+Sans:wght@400;600&display=swap');
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #FFF9C4; /* Amarelo claro para o fundo da página */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #5D4037; /* Marrom escuro para texto padrão */
+}
+
+.chat-container {
+    width: 95%;
+    max-width: 650px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+    max-height: 750px;
+}
+
+.chat-header {
+    background-color: #795548; /* Marrom para o cabeçalho */
+    color: #FFFDE7; /* Amarelo bem clarinho (quase branco) para o texto do cabeçalho */
+    padding: 15px; /* Reduzi um pouco para dar espaço à logo */
+    text-align: center;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    display: flex; /* Para alinhar logo e texto */
+    flex-direction: column; /* Empilhar logo e texto */
+    align-items: center; /* Centralizar horizontalmente */
+}
+
+/* Estilo para a Logo */
+#chatLogo {
+    width: 80px; /* Ajuste o tamanho conforme sua logo */
+    height: 80px; /* Ajuste o tamanho conforme sua logo */
+    margin-bottom: 10px; /* Espaço entre a logo e o título */
+    border-radius: 50%; /* Deixar redonda se for o caso, ou remova se for retangular */
+    /* object-fit: contain; */ /* Para garantir que a imagem caiba sem distorcer */
+}
+
+.chat-header h2 {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0 0 5px 0;
+    font-size: 1.7em; /* Ajustei um pouco o tamanho */
+}
+
+.chat-header p {
+    margin: 0;
+    font-size: 0.85em;
+    opacity: 0.9;
+}
+
+.chat-messages {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    border-bottom: 1px solid #D7CCC8; /* Borda marrom clara */
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    margin-bottom: 15px;
+    padding: 12px 18px;
+    border-radius: 18px;
+    line-height: 1.5;
+    max-width: 75%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.user-message {
+    background-color: #FFC107; /* Amarelo vibrante para mensagem do usuário */
+    color: #5D4037; /* Texto marrom escuro para contraste */
+    align-self: flex-end;
+    margin-left: auto;
+    text-align: left;
+    border-bottom-right-radius: 5px;
+}
+
+.bot-message {
+    background-color: #EFEBE9; /* Marrom bem claro para mensagem do bot */
+    color: #5D4037; /* Texto marrom escuro */
+    align-self: flex-start;
+    margin-right: auto;
+    text-align: left;
+    border-bottom-left-radius: 5px;
+}
+
+.message strong {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+    /* A cor do 'strong' vai herdar da cor do texto da bolha (.user-message ou .bot-message) */
+}
+
+.chat-input {
+    display: flex;
+    padding: 15px 20px;
+    background-color: #FFFDE7; /* Fundo amarelo bem clarinho para a área de input */
+    border-top: 1px solid #D7CCC8; /* Borda marrom clara */
+}
+
+.chat-input input[type="text"] {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border: 1px solid #A1887F; /* Borda marrom média */
+    border-radius: 20px;
+    margin-right: 10px;
+    font-size: 1em;
+    color: #5D4037; /* Texto do input marrom */
+}
+
+.chat-input input[type="text"]:focus {
+    outline: none;
+    border-color: #795548; /* Borda marrom mais escura no foco */
+    box-shadow: 0 0 0 0.2rem rgba(121, 85, 72, 0.25); /* Sombra marrom no foco */
+}
+
+.chat-input button {
+    padding: 12px 20px;
+    background-color: #FFC107; /* Botão amarelo vibrante */
+    color: #5D4037; /* Texto marrom escuro no botão */
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.chat-input button:hover {
+    background-color: #FFA000; /* Amarelo um pouco mais escuro no hover */
+}
+
+/* Estilos da barra de rolagem (opcional) */
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+.chat-messages::-webkit-scrollbar-track {
+    background: #FFF9C4; /* Fundo da barra de rolagem amarelo claro */
+    border-radius: 10px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #A1887F; /* Thumb da barra de rolagem marrom médio */
+    border-radius: 10px;
+}
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #795548; /* Thumb marrom mais escuro no hover */
+}
