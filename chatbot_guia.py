@@ -10,7 +10,11 @@ load_dotenv()
 
 # --- Configuração Inicial do Flask ---
 app = Flask(__name__)
-app.secret_key = 'minha_chave_secreta_super_forte_e_aleatoria_123!@#_corrigida' 
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+
+if not app.secret_key:
+    print("ALERTA: FLASK_SECRET_KEY não definida! A sessão não será segura. Defina-a no arquivo .env")
+    app.secret_key = "desenvolvimento_favor_mudar_em_producao" # Chave de fallback SÓ para desenvolvimento se a do .env falhar
 
 # --- Persona e Conteúdo do Chatbot ---
 NOME_CHATBOT = "Zé do Financeiro"
@@ -25,7 +29,7 @@ else:
     try:
         genai.configure(api_key=GOOGLE_API_KEY)
         print(f"[{NOME_CHATBOT}] API Key do Gemini configurada com sucesso!")
-        MODELO_GEMINI = genai.GenerativeModel('gemini-1.5-flash')
+        MODELO_GEMINI = genai.GenerativeModel('gemini-2.0-flash')
         print(f"[{NOME_CHATBOT}] Modelo Gemini '{MODELO_GEMINI.model_name}' carregado!")
     except Exception as e:
         print(f"[{NOME_CHATBOT}] Oxe! Deu um erro ao configurar o Gemini ou carregar o modelo: {e}")
@@ -51,7 +55,7 @@ def obter_intencao_com_gemini(mensagem_usuario):
         return "NENHUMA_ESPECIFICA" 
     tratamento_atual = obter_tratamento_usuario()
     prompt_classificacao = f"""
-Você é um assistente inteligente que analisa a mensagem de um usuário para um chatbot chamado "{NOME_CHATBOT}" e identifica qual a principal intenção do usuário. O {NOME_CHATBOT} é um guia de bolso para microempreendedores de Alagoas, com uma linguagem amigável e regional. O usuário pode ser chamado de '{tratamento_atual}'.
+Você é um assistente inteligente que analisa a mensagem de um usuário para um chatbot chamado "{NOME_CHATBOT}" e identifica qual a principal intenção do usuário. O {NOME_CHATBOT} é um guia de bolso para microempreendedores do Nordeste, com uma linguagem amigável e regional. O usuário pode ser chamado de '{tratamento_atual}'.
 As possíveis intenções que o {NOME_CHATBOT} pode atender são:
 1. SAUDACAO: Se o usuário está apenas cumprimentando (ex: "oi", "bom dia Zé", "e aí {tratamento_atual}").
 2. GLOSSARIO_TERMO: Se o usuário quer saber o significado de um termo financeiro específico (ex: "o que é MEI?", "me explique capital de giro para {tratamento_atual}", "bitcoin").

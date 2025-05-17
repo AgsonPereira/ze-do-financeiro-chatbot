@@ -26,38 +26,75 @@
         const chatMessages = document.getElementById('chatMessages');
         const userInput = document.getElementById('userInput');
         const sendButton = document.getElementById('sendButton');
-        let loadingMessageDiv = null;
-        let userName = localStorage.getItem('userName');
-        let esperandoNome = false; 
+        let loadingMessageDiv = null; // Para controlar a mensagem de "pensando..."
+        let userName = localStorage.getItem('userName'); // Pega nome do usuário do localStorage
+        let esperandoNome = false; // Flag para controlar se estamos aguardando o nome
 
-        const NOME_CHATBOT_FRONTEND = "Zé do Financeiro"; 
+        const NOME_CHATBOT_FRONTEND = "Zé do Financeiro"; // Nome do bot para exibição
+        const CHAT_HISTORY_KEY = 'zeDoFinanceiroChatHistory'; // Chave para o localStorage do histórico
+
+        // Função para obter o histórico do localStorage
+        function getChatHistory() {
+            const history = localStorage.getItem(CHAT_HISTORY_KEY);
+            return history ? JSON.parse(history) : [];
+        }
+
+        // Função para salvar uma nova mensagem no histórico
+        function saveMessageToHistory(text, sender, timestamp) {
+            const history = getChatHistory();
+            history.push({ text, sender, timestamp });
+            localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(history));
+        }
 
         // Função para adicionar mensagem ao chat
-        function addMessage(text, sender) {
+        function addMessage(text, sender, timestamp = new Date().toISOString(), fromHistory = false) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message');
+            
             // Usa o nome do usuário se existir, senão usa "Você"
             const displayName = sender === 'user' ? (userName || 'Você') : NOME_CHATBOT_FRONTEND;
 
+            const strong = document.createElement('strong');
+            strong.textContent = `${displayName}:`;
+            messageDiv.appendChild(strong);
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.style.display = 'inline'; // Para conteúdo ficar ao lado do nome
+
             if (sender === 'user') {
                 messageDiv.classList.add('user-message');
-                messageDiv.innerHTML = `<strong>${displayName}:</strong> `;
-                // Adiciona o texto do usuário como nó de texto para evitar renderização de HTML acidental
-                messageDiv.appendChild(document.createTextNode(text));
-            } else { // sender === 'bot' ou 'system' (para mensagens do próprio frontend)
+                // Adiciona o texto do usuário como nó de texto para evitar renderização de HTML
+                contentDiv.appendChild(document.createTextNode(" " + text));
+            } else { // sender === 'bot'
                 messageDiv.classList.add('bot-message');
-                messageDiv.innerHTML = `<strong>${displayName}:</strong> `;
-                const contentDiv = document.createElement('div');
-                contentDiv.style.display = 'inline'; // Para conteúdo ficar ao lado do nome
-                // Converte o texto do bot de Markdown para HTML se for uma resposta do bot
-                // Para mensagens do sistema (frontend), não precisa de parse Markdown
-                contentDiv.innerHTML = (sender === 'bot' && typeof marked !== 'undefined') ? marked.parse(text || "") : (text || "");
-                messageDiv.appendChild(contentDiv);
+                // Converte o texto do bot de Markdown para HTML
+                contentDiv.innerHTML = (typeof marked !== 'undefined') ? marked.parse(text || "") : (text || "");
             }
+            messageDiv.appendChild(contentDiv);
+
+            // Adicionar timestamp
+            const timeElement = document.createElement('span');
+            timeElement.style.fontSize = '0.75em';
+            timeElement.style.opacity = '0.7';
+            timeElement.style.display = 'block';
+            timeElement.style.textAlign = (sender === 'user') ? 'right' : 'left';
+            timeElement.style.marginTop = '5px';
+            try {
+                timeElement.textContent = new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            } catch (e) { // Fallback se o timestamp for inválido
+                timeElement.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            }
+            messageDiv.appendChild(timeElement);
+            
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight; 
+
+            if (!fromHistory) { // Salva no histórico apenas se não for uma mensagem sendo carregada do histórico
+                saveMessageToHistory(text, sender, timestamp);
+            }
         }
 
+        // Função para mostrar o indicador de carregamento
         function showLoadingIndicator() {
             if (loadingMessageDiv) { 
                 loadingMessageDiv.remove();
@@ -78,6 +115,7 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        // Função para esconder o indicador de carregamento
         function hideLoadingIndicator() {
             if (loadingMessageDiv) {
                 loadingMessageDiv.remove();
@@ -85,21 +123,24 @@
             }
         }
 
+        // Função para enviar mensagem para o backend
         async function sendMessageToBot(messageText) {
+            const userMessageTimestamp = new Date().toISOString();
+
             // Se estiver esperando o nome do usuário
             if (esperandoNome) {
                 const nomeDigitado = messageText.trim();
                 if (nomeDigitado) {
-                    userName = nomeDigitado; // Atualiza a variável global userName
+                    userName = nomeDigitado; 
                     localStorage.setItem('userName', userName); 
-                    addMessage(userName, 'user'); // Mostra o nome que o usuário digitou
+                    addMessage(userName, 'user', userMessageTimestamp); // Mostra o nome que o usuário digitou
                     
                     esperandoNome = false;
                     userInput.placeholder = "Digite sua mensagem aqui...";
-                    userInput.value = ''; // Limpa o input após pegar o nome
+                    userInput.value = ''; 
                     
-                    // Mensagem de boas-vindas do frontend após pegar o nome
-                    addMessage(`Prazer em te conhecer, ${userName}! Em que posso te ajudar agora?`, 'bot'); 
+                    const botWelcomeWithName = `Prazer em te conhecer, ${userName}! Em que posso te ajudar agora?`;
+                    addMessage(botWelcomeWithName, 'bot', new Date().toISOString()); 
                     
                     // Envia o nome para o backend para registrar na sessão Flask
                     try {
@@ -114,45 +155,36 @@
                         } else {
                             const dataNome = await responseNome.json();
                             console.log("[FRONTEND] Resposta do backend ao registrar nome:", dataNome);
-                            // Se o backend confirmar com uma mensagem, poderia ser adicionada aqui.
-                            // Ex: if (dataNome.resposta_bot) { addMessage(dataNome.resposta_bot, 'bot'); }
+                            // Se o backend confirmar com uma mensagem, poderia ser adicionada aqui
+                            // Ex: if (dataNome.resposta_bot && dataNome.resposta_bot !== `Beleza, ${userName}! Nome registrado...`) { addMessage(dataNome.resposta_bot, 'bot'); }
                         }
                     } catch (error) {
                         console.error('[FRONTEND] Erro ao enviar nome para o backend:', error);
                     }
                     userInput.focus();
-                    return; // Sai da função após tratar o nome
+                    return; 
                 } else {
-                    addMessage("Oxe, parece que você não digitou um nome. Pode tentar de novo?", 'bot'); // Mensagem do bot/sistema
+                    addMessage("Oxe, parece que você não digitou um nome. Pode tentar de novo?", 'bot', new Date().toISOString());
                     userInput.focus();
-                    return; // Sai para o usuário tentar de novo
+                    return; 
                 }
             }
 
             // Fluxo normal de envio de mensagem
-            addMessage(messageText, 'user');
+            addMessage(messageText, 'user', userMessageTimestamp);
             userInput.value = ''; 
             userInput.disabled = true;
             sendButton.disabled = true;
             showLoadingIndicator();
 
             try {
-                let url = `/webhook`; // Vamos usar POST
-                let fetchOptions = {
+                const fetchOptions = {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ mensagem: messageText, nome_usuario: userName }) // Envia nome_usuario sempre
                 };
                 
-                // Se fosse GET (como antes, mas agora estamos mudando para POST):
-                // let url = `/webhook?mensagem=${encodeURIComponent(messageText)}`;
-                // if (userName) { // Envia o nome se já o tivermos
-                //    url += `&nome_usuario=${encodeURIComponent(userName)}`;
-                // }
-
-                const response = await fetch(url, fetchOptions);
+                const response = await fetch('/webhook', fetchOptions);
                 
                 hideLoadingIndicator(); 
 
@@ -163,15 +195,15 @@
                 const data = await response.json();
                 
                 if (data && data.resposta_bot) {
-                    addMessage(data.resposta_bot, 'bot');
+                    addMessage(data.resposta_bot, 'bot', new Date().toISOString());
                 } else {
-                    addMessage("O Zé não conseguiu processar essa, tente de novo ou de outra forma.", 'bot');
+                    addMessage("O Zé não conseguiu processar essa, tente de novo ou de outra forma.", 'bot', new Date().toISOString());
                 }
 
             } catch (error) {
                 hideLoadingIndicator(); 
                 console.error('[FRONTEND] Erro ao enviar mensagem:', error);
-                addMessage(`Oxe, deu um piripaque na minha conexão com o Zé! Tenta de novo daqui a pouquinho. (Erro: ${error.message})`, 'bot');
+                addMessage(`Oxe, deu um piripaque na minha conexão com o Zé! (Erro: ${error.message})`, 'bot', new Date().toISOString());
             } finally {
                 userInput.disabled = false;
                 sendButton.disabled = false;
@@ -181,24 +213,45 @@
 
         // Lógica de inicialização do chat
         function iniciarChat() {
-            if (userName) {
-                addMessage(`De volta, ${userName}! Sou o ${NOME_CHATBOT_FRONTEND}. Em que posso te ajudar hoje?`, 'bot');
+            // Limpa mensagens existentes na tela para não duplicar ao carregar histórico
+            chatMessages.innerHTML = ''; 
+            
+            const chatHistory = getChatHistory();
+            chatHistory.forEach(msg => {
+                addMessage(msg.text, msg.sender, msg.timestamp, true); // true indica que é do histórico
+            });
+
+            if (userName) { // Se tem nome no localStorage
+                // Se o histórico estava vazio, mas temos nome, significa que é um retorno do usuário
+                // e o backend já deve ter sido informado ou será informado na primeira mensagem.
+                // A saudação inicial do backend já usará o nome.
+                // Podemos adicionar uma mensagem de "Bem-vindo de volta" do frontend se o histórico estiver vazio.
+                if (chatHistory.length === 0) {
+                    addMessage(`De volta, ${userName}! Sou o ${NOME_CHATBOT_FRONTEND}. Em que posso te ajudar hoje?`, 'bot', new Date().toISOString(), true); // Adiciona ao histórico visual, mas não salva de novo
+                }
                 userInput.placeholder = "Digite sua mensagem aqui...";
-                // Opcional: Informar ao backend que o usuário retornou, para carregar o nome na sessão Flask
-                // se a sessão tiver expirado mas o localStorage ainda tiver o nome.
+                // Garante que o backend tem o nome na sessão (caso a sessão Flask tenha expirado)
                  fetch('/webhook', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nome_usuario: userName, mensagem: "REINICIO_SESSAO_COM_NOME" })
                  });
-            } else {
-                addMessage(`Olá! Sou o ${NOME_CHATBOT_FRONTEND}. Para nosso papo ficar mais arretado, como posso te chamar?`, 'bot');
-                userInput.placeholder = "Digite seu nome aqui...";
-                esperandoNome = true;
+            } else { // Se não tem nome no localStorage
+                 // Se não tem nome E não tem histórico, pede o nome.
+                if (chatHistory.length === 0) {
+                    addMessage(`Olá! Sou o ${NOME_CHATBOT_FRONTEND}. Para nosso papo ficar mais arretado, como posso te chamar?`, 'bot', new Date().toISOString(), true); // Adiciona ao histórico visual
+                    userInput.placeholder = "Digite seu nome aqui...";
+                    esperandoNome = true;
+                } else {
+                    // Tem histórico mas por algum motivo perdeu o nome no localStorage (raro)
+                    // Pode pedir o nome novamente ou apenas deixar o placeholder padrão.
+                    userInput.placeholder = "Digite sua mensagem aqui...";
+                }
             }
             userInput.focus();
         }
 
+        // Event listener para o botão de enviar
         sendButton.addEventListener('click', () => {
             const messageText = userInput.value.trim();
             if (messageText) {
@@ -206,8 +259,10 @@
             }
         });
 
+        // Event listener para a tecla Enter no campo de input
         userInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
+                event.preventDefault(); // Evita o comportamento padrão do Enter (que poderia ser submeter um formulário)
                 const messageText = userInput.value.trim();
                 if (messageText) {
                     sendMessageToBot(messageText);

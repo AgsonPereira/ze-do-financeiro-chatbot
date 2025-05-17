@@ -1,19 +1,24 @@
 /* static/css/estilo.css */
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Open+Sans:wght@400;600&display=swap');
+/* Importando fontes do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&display=swap');
 
+/* Estilos Globais e Body */
 body {
     font-family: 'Open Sans', sans-serif;
+    font-size: 16px; /* Tamanho de fonte base para a página */
     margin: 0;
     padding: 0;
-    background-color: #FFF9C4; /* Amarelo claro para o fundo da página */
+    background-color: #e6ee9c; /* Amarelo bem clarinho de fundo geral */
+    color: #4E342E;     /* Marrom mais escuro para texto principal */
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    color: #5D4037; /* Marrom escuro para texto padrão */
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
+/* Container Principal do Chat */
 .chat-container {
     width: 95%;
     max-width: 650px;
@@ -24,139 +29,266 @@ body {
     flex-direction: column;
     height: 90vh;
     max-height: 750px;
+    overflow: hidden;
 }
 
+/* Cabeçalho do Chat */
 .chat-header {
     background-color: #795548; /* Marrom para o cabeçalho */
-    color: #FFFDE7; /* Amarelo bem clarinho (quase branco) para o texto do cabeçalho */
-    padding: 15px; /* Reduzi um pouco para dar espaço à logo */
+    color: #FFFDE7; 
+    padding: 15px;
     text-align: center;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
-    display: flex; /* Para alinhar logo e texto */
-    flex-direction: column; /* Empilhar logo e texto */
-    align-items: center; /* Centralizar horizontalmente */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
 }
 
-/* Estilo para a Logo */
 #chatLogo {
-    width: 80px; /* Ajuste o tamanho conforme sua logo */
-    height: 80px; /* Ajuste o tamanho conforme sua logo */
-    margin-bottom: 10px; /* Espaço entre a logo e o título */
-    border-radius: 50%; /* Deixar redonda se for o caso, ou remova se for retangular */
-    /* object-fit: contain; */ /* Para garantir que a imagem caiba sem distorcer */
+    width: 60px;
+    height: 60px;
+    margin-bottom: 8px;
+    border-radius: 50%;
 }
 
 .chat-header h2 {
     font-family: 'Montserrat', sans-serif;
-    margin: 0 0 5px 0;
-    font-size: 1.7em; /* Ajustei um pouco o tamanho */
+    font-weight: 700;
+    font-size: 1.7em; 
+    margin: 0 0 4px 0;
 }
 
 .chat-header p {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.8em;
+    font-weight: 400;
+    opacity: 0.85;
     margin: 0;
-    font-size: 0.85em;
-    opacity: 0.9;
 }
 
+#clearChatButton { /* Estilo para o botão Limpar Chat que adicionamos antes */
+    background-color: #FFC107;
+    color: #4E342E;
+    border: 1px solid #4E342E;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8em;
+    margin-top: 10px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+#clearChatButton:hover {
+    background-color: #4E342E;
+    color: #FFFDE7;
+}
+
+/* Área de Mensagens */
 .chat-messages {
     flex-grow: 1;
-    padding: 20px;
+    padding: 15px;
     overflow-y: auto;
-    border-bottom: 1px solid #D7CCC8; /* Borda marrom clara */
+    border-bottom: 1px solid #D7CCC8;
     display: flex;
     flex-direction: column;
+    gap: 10px; 
 }
 
+/* Estilo Base das Bolhas de Mensagem */
 .message {
-    margin-bottom: 15px;
-    padding: 12px 18px;
-    border-radius: 18px;
-    line-height: 1.5;
-    max-width: 75%;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    padding: 10px 15px;
+    border-radius: 18px; 
+    line-height: 1.5; 
+    font-size: 1em;  /* AJUSTADO - Tamanho base para o texto da mensagem */
+    max-width: 80%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInMessage 0.3s ease-out forwards;
+    word-wrap: break-word; 
+}
+
+@keyframes fadeInMessage {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .user-message {
-    background-color: #FFC107; /* Amarelo vibrante para mensagem do usuário */
-    color: #5D4037; /* Texto marrom escuro para contraste */
+    background-color: #FFC107; 
+    color: #4E342E; 
     align-self: flex-end;
-    margin-left: auto;
-    text-align: left;
-    border-bottom-right-radius: 5px;
+    margin-left: auto; 
+    text-align: left; 
+    border-bottom-right-radius: 6px;
 }
 
 .bot-message {
-    background-color: #EFEBE9; /* Marrom bem claro para mensagem do bot */
-    color: #5D4037; /* Texto marrom escuro */
+    background-color: #EFEBE9; 
+    color: #4E342E;     
     align-self: flex-start;
-    margin-right: auto;
+    margin-right: auto; 
     text-align: left;
-    border-bottom-left-radius: 5px;
+    border-bottom-left-radius: 6px;
 }
 
+/* Nome do remetente (Você: / Zé do Financeiro:) */
 .message strong {
     font-weight: 600;
     display: block;
     margin-bottom: 4px;
-    font-size: 0.9em;
-    /* A cor do 'strong' vai herdar da cor do texto da bolha (.user-message ou .bot-message) */
+    font-size: 0.9em; /* Relativo ao font-size do .message */
+    color: inherit; 
 }
 
+/* Conteúdo de texto dentro da bolha do bot (parágrafos, listas, etc. gerados pelo marked.js) */
+.bot-message div p,
+.bot-message div ul,
+.bot-message div ol,
+.bot-message div {  /* Seletor geral para o conteúdo se não for um <p> ou lista direta */
+    font-size: inherit; /* Herda o font-size de .message (1em) */
+    margin-top: 0; /* Remove margem do topo do primeiro elemento */
+    margin-bottom: 0; /* Remove margem de baixo do último elemento */
+}
+
+/* Garante que parágrafos subsequentes tenham margem, se houver mais de um */
+.bot-message div p + p {
+    margin-top: 0.5em; 
+}
+
+.bot-message div > ul,
+.bot-message div > ol {
+    padding-left: 20px;
+    margin-top: 0.5em; /* Espaço antes da lista */
+    margin-bottom: 0.5em; /* Espaço depois da lista */
+}
+.bot-message div > li {
+    margin-bottom: 0.25em; /* Espaço entre itens da lista */
+}
+
+
+/* Timestamp da Mensagem */
+.message span { 
+    font-size: 0.8em; /* Ajustado para ser relativo ao novo tamanho do .message */
+    opacity: 0.7;
+    display: block; 
+    margin-top: 5px;
+}
+
+/* Área de Input */
 .chat-input {
     display: flex;
     padding: 15px 20px;
-    background-color: #FFFDE7; /* Fundo amarelo bem clarinho para a área de input */
-    border-top: 1px solid #D7CCC8; /* Borda marrom clara */
+    background-color: #FFF9C4; 
+    border-top: 1px solid #D7CCC8; 
+    align-items: center; 
 }
 
 .chat-input input[type="text"] {
     flex-grow: 1;
-    padding: 12px 15px;
-    border: 1px solid #A1887F; /* Borda marrom média */
+    padding: 10px 15px; 
+    border: 1px solid #A1887F; 
     border-radius: 20px;
     margin-right: 10px;
-    font-size: 1em;
-    color: #5D4037; /* Texto do input marrom */
+    font-size: 1em; /* Tamanho da fonte do input igual ao das mensagens */
+    color: #4E342E;
 }
 
 .chat-input input[type="text"]:focus {
     outline: none;
-    border-color: #795548; /* Borda marrom mais escura no foco */
-    box-shadow: 0 0 0 0.2rem rgba(121, 85, 72, 0.25); /* Sombra marrom no foco */
+    border-color: #795548; 
+    box-shadow: 0 0 0 0.2rem rgba(121, 85, 72, 0.25); 
 }
 
 .chat-input button {
-    padding: 12px 20px;
-    background-color: #FFC107; /* Botão amarelo vibrante */
-    color: #5D4037; /* Texto marrom escuro no botão */
+    padding: 10px 20px; 
+    background-color: #FFC107; 
+    color: #4E342E;      
     border: none;
     border-radius: 20px;
     cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
     font-weight: 600;
+    font-size: 1em; /* Tamanho da fonte do botão igual ao das mensagens */
     transition: background-color 0.2s ease-in-out;
+    white-space: nowrap; 
 }
 
 .chat-input button:hover {
-    background-color: #FFA000; /* Amarelo um pouco mais escuro no hover */
+    background-color: #FFA000; 
 }
 
-/* Estilos da barra de rolagem (opcional) */
+/* Estilo para mensagem de carregamento */
+.loading-indicator div { /* O div interno que contém o texto */
+    font-style: italic;
+    opacity: 0.8;
+    font-size: inherit; /* Garante que herda o tamanho de .bot-message */
+}
+
+/* Estilos da Barra de Rolagem (Opcional, melhor visualização em navegadores WebKit) */
 .chat-messages::-webkit-scrollbar {
     width: 8px;
 }
 .chat-messages::-webkit-scrollbar-track {
-    background: #FFF9C4; /* Fundo da barra de rolagem amarelo claro */
+    background: #FFFDE7; 
     border-radius: 10px;
 }
 .chat-messages::-webkit-scrollbar-thumb {
-    background: #A1887F; /* Thumb da barra de rolagem marrom médio */
+    background: #A1887F; 
     border-radius: 10px;
 }
 .chat-messages::-webkit-scrollbar-thumb:hover {
-    background: #795548; /* Thumb marrom mais escuro no hover */
+    background: #795548; 
 }
-.loading-indicator div { /* Estiliza o conteúdo dentro da bolha de carregamento */
-    font-style: italic;
-    opacity: 0.8; /* Um pouco mais transparente */
+
+/* Media Queries para Responsividade */
+@media (max-width: 700px) {
+    body {
+        align-items: flex-start;
+        padding-top: 0; 
+        background-color: #ffffff; 
+        font-size: 15px; /* Reduzir um pouco o tamanho base em mobile */
+    }
+    .chat-container {
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    .chat-header h2 {
+        font-size: 1.5em; /* Ajustado para o novo body font-size */
+    }
+    .chat-header p {
+        font-size: 0.8em; /* Ajustado */
+    }
+    #chatLogo {
+        width: 50px;
+        height: 50px;
+    }
+    .message {
+        max-width: 90%; 
+        padding: 8px 12px;
+        font-size: 1em; /* Em mobile, 1em será relativo ao font-size do body (15px) */
+    }
+     .message strong {
+        font-size: 0.9em; 
+    }
+    .message span { /* Timestamp em mobile */
+        font-size: 0.75em;
+    }
+    .chat-input {
+        padding: 10px;
+    }
+    .chat-input input[type="text"] {
+        padding: 10px 12px;
+        font-size: 1em;
+    }
+    .chat-input button {
+        padding: 10px 15px;
+        font-size: 1em;
+    }
 }
