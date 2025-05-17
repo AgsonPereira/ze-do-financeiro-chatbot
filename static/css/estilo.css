@@ -156,3 +156,7 @@ body {
 .chat-messages::-webkit-scrollbar-thumb:hover {
     background: #795548; /* Thumb marrom mais escuro no hover */
 }
+.loading-indicator div { /* Estiliza o conteúdo dentro da bolha de carregamento */
+    font-style: italic;
+    opacity: 0.8; /* Um pouco mais transparente */
+}

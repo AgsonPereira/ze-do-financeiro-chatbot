@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Zé do Financeiro - Seu Guia de Bolso!</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zé do Financeiro - Seu Guia de Bolso!</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
 <body>
     <div class="chat-container">
         <div class="chat-header">
@@ -14,10 +15,7 @@
             <p>Seu guia de bolso para o microempreendedor digitalizado!</p>
         </div>
         <div class="chat-messages" id="chatMessages">
-            <div class="message bot-message">
-                <strong>Zé do Financeiro:</strong> Olá! Sou o Zé do Financeiro. Em que posso te ajudar hoje?
             </div>
-        </div>
         <div class="chat-input">
             <input type="text" id="userInput" placeholder="Digite sua mensagem aqui...">
             <button id="sendButton">Enviar</button>
@@ -28,34 +26,136 @@
         const chatMessages = document.getElementById('chatMessages');
         const userInput = document.getElementById('userInput');
         const sendButton = document.getElementById('sendButton');
+        let loadingMessageDiv = null;
+        let userName = localStorage.getItem('userName');
+        let esperandoNome = false; 
+
+        const NOME_CHATBOT_FRONTEND = "Zé do Financeiro"; 
 
         // Função para adicionar mensagem ao chat
         function addMessage(text, sender) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message');
+            // Usa o nome do usuário se existir, senão usa "Você"
+            const displayName = sender === 'user' ? (userName || 'Você') : NOME_CHATBOT_FRONTEND;
+
             if (sender === 'user') {
                 messageDiv.classList.add('user-message');
-                messageDiv.innerHTML = `<strong>Você:</strong> ${text}`;
-            } else {
+                messageDiv.innerHTML = `<strong>${displayName}:</strong> `;
+                // Adiciona o texto do usuário como nó de texto para evitar renderização de HTML acidental
+                messageDiv.appendChild(document.createTextNode(text));
+            } else { // sender === 'bot' ou 'system' (para mensagens do próprio frontend)
                 messageDiv.classList.add('bot-message');
-                messageDiv.innerHTML = `<strong>Zé do Financeiro:</strong> ${text}`;
+                messageDiv.innerHTML = `<strong>${displayName}:</strong> `;
+                const contentDiv = document.createElement('div');
+                contentDiv.style.display = 'inline'; // Para conteúdo ficar ao lado do nome
+                // Converte o texto do bot de Markdown para HTML se for uma resposta do bot
+                // Para mensagens do sistema (frontend), não precisa de parse Markdown
+                contentDiv.innerHTML = (sender === 'bot' && typeof marked !== 'undefined') ? marked.parse(text || "") : (text || "");
+                messageDiv.appendChild(contentDiv);
             }
             chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Rolagem automática para a última mensagem
+            chatMessages.scrollTop = chatMessages.scrollHeight; 
         }
 
-        // Função para enviar mensagem para o backend
+        function showLoadingIndicator() {
+            if (loadingMessageDiv) { 
+                loadingMessageDiv.remove();
+            }
+            loadingMessageDiv = document.createElement('div');
+            loadingMessageDiv.classList.add('message', 'bot-message', 'loading-indicator'); 
+            
+            const strong = document.createElement('strong');
+            strong.textContent = `${NOME_CHATBOT_FRONTEND}:`;
+            loadingMessageDiv.appendChild(strong);
+
+            const content = document.createElement('div');
+            content.style.display = 'inline';
+            content.innerHTML = ' Estou pensando um cadinho, ' + (userName || 'meu patrão/minha patroa') + '... 🧠'; 
+            loadingMessageDiv.appendChild(content);
+            
+            chatMessages.appendChild(loadingMessageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideLoadingIndicator() {
+            if (loadingMessageDiv) {
+                loadingMessageDiv.remove();
+                loadingMessageDiv = null; 
+            }
+        }
+
         async function sendMessageToBot(messageText) {
-            addMessage(messageText, 'user'); // Mostra a mensagem do usuário na tela
-            userInput.value = ''; // Limpa o campo de input
+            // Se estiver esperando o nome do usuário
+            if (esperandoNome) {
+                const nomeDigitado = messageText.trim();
+                if (nomeDigitado) {
+                    userName = nomeDigitado; // Atualiza a variável global userName
+                    localStorage.setItem('userName', userName); 
+                    addMessage(userName, 'user'); // Mostra o nome que o usuário digitou
+                    
+                    esperandoNome = false;
+                    userInput.placeholder = "Digite sua mensagem aqui...";
+                    userInput.value = ''; // Limpa o input após pegar o nome
+                    
+                    // Mensagem de boas-vindas do frontend após pegar o nome
+                    addMessage(`Prazer em te conhecer, ${userName}! Em que posso te ajudar agora?`, 'bot'); 
+                    
+                    // Envia o nome para o backend para registrar na sessão Flask
+                    try {
+                        console.log(`[FRONTEND] Enviando nome '${userName}' para o backend...`);
+                        const responseNome = await fetch('/webhook', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ nome_usuario: userName, mensagem: "REGISTRO_DE_NOME_USUARIO" }),
+                        });
+                        if (!responseNome.ok) {
+                            console.error("[FRONTEND] Erro ao registrar nome no backend:", responseNome.statusText);
+                        } else {
+                            const dataNome = await responseNome.json();
+                            console.log("[FRONTEND] Resposta do backend ao registrar nome:", dataNome);
+                            // Se o backend confirmar com uma mensagem, poderia ser adicionada aqui.
+                            // Ex: if (dataNome.resposta_bot) { addMessage(dataNome.resposta_bot, 'bot'); }
+                        }
+                    } catch (error) {
+                        console.error('[FRONTEND] Erro ao enviar nome para o backend:', error);
+                    }
+                    userInput.focus();
+                    return; // Sai da função após tratar o nome
+                } else {
+                    addMessage("Oxe, parece que você não digitou um nome. Pode tentar de novo?", 'bot'); // Mensagem do bot/sistema
+                    userInput.focus();
+                    return; // Sai para o usuário tentar de novo
+                }
+            }
+
+            // Fluxo normal de envio de mensagem
+            addMessage(messageText, 'user');
+            userInput.value = ''; 
             userInput.disabled = true;
             sendButton.disabled = true;
+            showLoadingIndicator();
 
             try {
-                // Usaremos GET por simplicidade inicial, como nos testes anteriores.
-                // O ideal seria POST com JSON, mas vamos um passo de cada vez.
-                const response = await fetch(`/webhook?mensagem=${encodeURIComponent(messageText)}`);
+                let url = `/webhook`; // Vamos usar POST
+                let fetchOptions = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ mensagem: messageText, nome_usuario: userName }) // Envia nome_usuario sempre
+                };
                 
+                // Se fosse GET (como antes, mas agora estamos mudando para POST):
+                // let url = `/webhook?mensagem=${encodeURIComponent(messageText)}`;
+                // if (userName) { // Envia o nome se já o tivermos
+                //    url += `&nome_usuario=${encodeURIComponent(userName)}`;
+                // }
+
+                const response = await fetch(url, fetchOptions);
+                
+                hideLoadingIndicator(); 
+
                 if (!response.ok) {
                     throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
                 }
@@ -69,8 +169,9 @@
                 }
 
             } catch (error) {
-                console.error('Erro ao enviar mensagem:', error);
-                addMessage(`Oxe, deu um piripaque na minha conexão! Tenta de novo daqui a pouquinho. (Erro: ${error.message})`, 'bot');
+                hideLoadingIndicator(); 
+                console.error('[FRONTEND] Erro ao enviar mensagem:', error);
+                addMessage(`Oxe, deu um piripaque na minha conexão com o Zé! Tenta de novo daqui a pouquinho. (Erro: ${error.message})`, 'bot');
             } finally {
                 userInput.disabled = false;
                 sendButton.disabled = false;
@@ -78,7 +179,26 @@
             }
         }
 
-        // Event listener para o botão de enviar
+        // Lógica de inicialização do chat
+        function iniciarChat() {
+            if (userName) {
+                addMessage(`De volta, ${userName}! Sou o ${NOME_CHATBOT_FRONTEND}. Em que posso te ajudar hoje?`, 'bot');
+                userInput.placeholder = "Digite sua mensagem aqui...";
+                // Opcional: Informar ao backend que o usuário retornou, para carregar o nome na sessão Flask
+                // se a sessão tiver expirado mas o localStorage ainda tiver o nome.
+                 fetch('/webhook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome_usuario: userName, mensagem: "REINICIO_SESSAO_COM_NOME" })
+                 });
+            } else {
+                addMessage(`Olá! Sou o ${NOME_CHATBOT_FRONTEND}. Para nosso papo ficar mais arretado, como posso te chamar?`, 'bot');
+                userInput.placeholder = "Digite seu nome aqui...";
+                esperandoNome = true;
+            }
+            userInput.focus();
+        }
+
         sendButton.addEventListener('click', () => {
             const messageText = userInput.value.trim();
             if (messageText) {
@@ -86,7 +206,6 @@
             }
         });
 
-        // Event listener para a tecla Enter no campo de input
         userInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
                 const messageText = userInput.value.trim();
@@ -95,6 +214,9 @@
                 }
             }
         });
+
+        // Inicia o chat quando a página carrega
+        iniciarChat();
     </script>
 </body>
 </html>
